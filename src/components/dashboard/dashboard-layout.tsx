@@ -33,11 +33,8 @@ import {
   CreditCard,
   FileText,
   Home,
-  Receipt,
   Search,
   Settings,
-  TrendingUp,
-  Users,
 } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useRouter } from "next/navigation"
@@ -54,26 +51,7 @@ const menuItems = [
     icon: Calculator,
     items: [
       { title: "Chart of Accounts", url: "/accounting/chart-of-accounts" },
-      { title: "Journal Entries", url: "/accounting/journal-entries" },
       { title: "Bank Reconciliation", url: "/accounting/bank-reconciliation" },
-    ],
-  },
-  {
-    title: "Sales",
-    icon: TrendingUp,
-    items: [
-      { title: "Invoices", url: "/sales/invoices" },
-      { title: "Quotes", url: "/sales/quotes" },
-      { title: "Customers", url: "/sales/customers" },
-    ],
-  },
-  {
-    title: "Purchases",
-    icon: Receipt,
-    items: [
-      { title: "Bills", url: "/purchases/bills" },
-      { title: "Purchase Orders", url: "/purchases/orders" },
-      { title: "Suppliers", url: "/purchases/suppliers" },
     ],
   },
   {
@@ -82,22 +60,14 @@ const menuItems = [
     items: [
       { title: "Bank Accounts", url: "/banking/accounts" },
       { title: "Transactions", url: "/banking/transactions" },
-      { title: "Transfers", url: "/banking/transfers" },
     ],
   },
   {
     title: "Reports",
     icon: BarChart3,
     items: [
-      { title: "Profit & Loss", url: "/reports/profit-loss" },
-      { title: "Balance Sheet", url: "/reports/balance-sheet" },
       { title: "Cash Flow", url: "/reports/cash-flow" },
     ],
-  },
-  {
-    title: "Contacts",
-    icon: Users,
-    url: "/contacts",
   },
   {
     title: "Settings",
