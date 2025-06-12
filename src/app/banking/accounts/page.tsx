@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { MoreHorizontal, Plus, Search } from "lucide-react"
+import { CreateAccountModal } from "@/components/banking/create-account-modal"
 
 const accounts = [
   {
@@ -71,15 +72,23 @@ const accounts = [
 ]
 
 export default function BankAccountsPage() {
+  const handleCreateAccount = (data: {
+    name: string
+    accountNumber: string
+    bank: string
+    type: string
+    balance: number
+  }) => {
+    // Here you would typically make an API call to create the account
+    console.log("Creating account:", data)
+  }
+
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">Bank Accounts</h1>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Account
-          </Button>
+          <CreateAccountModal onSubmit={handleCreateAccount} />
         </div>
 
         <div className="flex items-center gap-4">
