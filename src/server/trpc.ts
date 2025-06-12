@@ -1,6 +1,6 @@
 import { initTRPC } from '@trpc/server';
-import superjson from 'superjson';
 import { ZodError } from 'zod';
+import superjson from 'superjson';
 import { type NextRequest } from 'next/server';
 
 /**
@@ -27,7 +27,7 @@ type Context = Awaited<ReturnType<typeof createTRPCContext>>;
  *
  * This is where the tRPC API is initialized, connecting the context and transformer.
  */
-const t = initTRPC.context<Context>().create({
+const t = initTRPC.create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
     return {

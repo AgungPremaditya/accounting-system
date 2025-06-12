@@ -22,6 +22,9 @@ import {
 } from "@/components/ui/select"
 import { Plus } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { toast } from "sonner"
+import { trpc } from "@/utils/trpc"
+import { type Account } from "@/types/database.types"
 
 const formFields = [
   {
@@ -85,17 +88,7 @@ const itemVariants = {
   },
 }
 
-interface CreateAccountModalProps {
-  onSubmit?: (data: {
-    name: string
-    accountNumber: string
-    bank: string
-    type: string
-    balance: number
-  }) => void
-}
-
-export function CreateAccountModal({ onSubmit }: CreateAccountModalProps) {
+export function CreateAccountModal() {
   const [open, setOpen] = React.useState(false)
   const [formData, setFormData] = React.useState({
     name: "",
@@ -105,21 +98,32 @@ export function CreateAccountModal({ onSubmit }: CreateAccountModalProps) {
     balance: "",
   })
 
+  const utils = trpc.useContext()
+  
+  const { mutate: createAccount, isPending } = trpc.bankAccount.create.useMutation<Account>({
+    onSuccess: () => {
+      utils.bankAccount.list.invalidate()
+      toast.success("Bank account created successfully")
+      setOpen(false)
+      setFormData({
+        name: "",
+        accountNumber: "",
+        bank: "",
+        type: "",
+        balance: "",
+      })
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    },
+  })
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (onSubmit) {
-      onSubmit({
-        ...formData,
-        balance: parseFloat(formData.balance) || 0,
-      })
-    }
-    setOpen(false)
-    setFormData({
-      name: "",
-      accountNumber: "",
-      bank: "",
-      type: "",
-      balance: "",
+    createAccount({
+      ...formData,
+      balance: parseFloat(formData.balance) || 0,
+      type: formData.type as "checking" | "savings" | "investment",
     })
   }
 
@@ -193,10 +197,13 @@ export function CreateAccountModal({ onSubmit }: CreateAccountModalProps) {
                   type="button"
                   variant="outline"
                   onClick={() => setOpen(false)}
+                  disabled={isPending}
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Create Account</Button>
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? "Creating..." : "Create Account"}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>

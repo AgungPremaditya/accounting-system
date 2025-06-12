@@ -1,72 +1,74 @@
-import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
-// Create a Supabase client for the middleware
-const createServerSupabaseClient = (accessToken: string | undefined) => {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL');
-  }
-  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_ANON_KEY');
-  }
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-        detectSessionInUrl: false,
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
       },
-      global: {
-        headers: {
-          Authorization: accessToken ? `Bearer ${accessToken}` : '',
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          // Set cookie for the request
+          request.cookies.set(name, value);
+          
+          // Set cookie for the response with all options
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set(name, value, {
+            ...options,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+          });
+        },
+        remove(name: string, options: CookieOptions) {
+          // Remove cookie from request
+          request.cookies.delete(name);
+          
+          // Remove cookie from response
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.delete(name);
         },
       },
     }
   );
-};
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  // Get auth tokens from cookies
-  const accessToken = req.cookies.get('sb-access-token')?.value;
-  const refreshToken = req.cookies.get('sb-refresh-token')?.value;
-
-  // Create Supabase client with the access token
-  const supabase = createServerSupabaseClient(accessToken);
-
-  let session = null;
-  if (accessToken && refreshToken) {
-    try {
-      const { data, error } = await supabase.auth.getUser();
-      if (!error && data.user) {
-        session = { user: data.user };
-      }
-    } catch (error) {
-      console.error('Error verifying session:', error);
-    }
+  // If no session and trying to access protected route, redirect to login
+  if (!session && !request.nextUrl.pathname.startsWith('/auth')) {
+    return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  // Auth condition 1: Must be logged in to access anything except auth pages and public pages
-  if (!session && !req.nextUrl.pathname.startsWith('/auth')) {
-    const redirectUrl = new URL('/auth/login', req.url);
-    redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname);
-    return NextResponse.redirect(redirectUrl);
+  // If session exists and trying to access auth routes, redirect to dashboard
+  if (session && request.nextUrl.pathname.startsWith('/auth')) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Auth condition 2: Must be logged out to access auth pages
-  if (session && req.nextUrl.pathname.startsWith('/auth')) {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
-  }
-
-  return res;
+  return response;
 }
 
-// Specify which routes the middleware should run on
 export const config = {
   matcher: [
     /*
@@ -75,8 +77,7 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
-     * - api routes that don't require auth
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|.*\\.(?:css|js)$|api/public).*)',
+    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
   ],
 }; 
