@@ -45,24 +45,17 @@ export async function signUp(formData: FormData) {
 
 export async function signOut() {
   const supabase = await createServerSupabase();
-  
-  const { error } = await supabase.auth.signOut();
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  redirect('/auth/login');
+  await supabase.auth.signOut();
+  return redirect('/auth/login');
 }
 
-export async function getSession() {
+export async function getUser() {
   const supabase = await createServerSupabase();
-  
-  const { data: { session }, error } = await supabase.auth.getSession();
+  const { data: { user }, error } = await supabase.auth.getUser();
 
-  if (error) {
-    return { error: error.message };
+  if (error || !user) {
+    return null;
   }
 
-  return { session };
+  return user;
 } 

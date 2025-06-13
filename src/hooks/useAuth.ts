@@ -7,36 +7,31 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const supabase = createBrowserSupabase();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session) {
-          setUser(session.user);
-        } else {
-          setUser(null);
-          router.push('/auth/login');
-        }
-        setLoading(false);
-      }
-    );
+    const supabase = createBrowserSupabase();
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setUser(session.user);
-      }
+    // Get initial user state
+    supabase.auth.getUser().then(({ data: { user }, error }) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // When auth state changes, verify the user with getUser
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
       setLoading(false);
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [router, supabase]);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await createBrowserSupabase().auth.signInWithPassword({
       email,
       password,
     });
@@ -49,7 +44,7 @@ export function useAuth() {
   };
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { error } = await createBrowserSupabase().auth.signUp({
       email,
       password,
     });
@@ -63,7 +58,7 @@ export function useAuth() {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await createBrowserSupabase().auth.signOut();
     if (error) {
       throw error;
     }

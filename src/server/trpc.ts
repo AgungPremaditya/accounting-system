@@ -1,7 +1,8 @@
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { ZodError } from 'zod';
 import superjson from 'superjson';
 import { type NextRequest } from 'next/server';
+import { createServerSupabase } from '@/lib/supabase/server';
 
 /**
  * 1. CONTEXT
@@ -20,14 +21,18 @@ export const createTRPCContext = async (opts: CreateContextOptions) => {
   };
 };
 
-type Context = Awaited<ReturnType<typeof createTRPCContext>>;
+export type Context = {
+  user: {
+    id: string;
+  } | null;
+};
 
 /**
  * 2. INITIALIZATION
  *
  * This is where the tRPC API is initialized, connecting the context and transformer.
  */
-const t = initTRPC.create({
+const t = initTRPC.context<Context>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
@@ -48,4 +53,25 @@ const t = initTRPC.create({
  * a lot in the "/src/server/api/routers" directory.
  */
 export const router = t.router;
-export const publicProcedure = t.procedure; 
+export const publicProcedure = t.procedure;
+
+export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+  const supabase = await createServerSupabase();
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'You must be logged in',
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: {
+        id: user.id,
+      },
+    },
+  });
+}); 

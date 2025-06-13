@@ -23,6 +23,14 @@ export { supabase };
 export const createBrowserSupabase = () => {
   return createBrowserClient<Database>(
     supabaseUrl,
-    supabaseAnonKey
+    supabaseAnonKey,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+      },
+    }
   );
 }; 

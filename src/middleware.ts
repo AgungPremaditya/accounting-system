@@ -54,15 +54,17 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  // Refresh session if expired - required for Server Components
+  // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   // If no session and trying to access protected route, redirect to login
-  if (!session && !request.nextUrl.pathname.startsWith('/auth')) {
+  if (!user && !request.nextUrl.pathname.startsWith('/auth')) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
   // If session exists and trying to access auth routes, redirect to dashboard
-  if (session && request.nextUrl.pathname.startsWith('/auth')) {
+  if (user && request.nextUrl.pathname.startsWith('/auth')) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
