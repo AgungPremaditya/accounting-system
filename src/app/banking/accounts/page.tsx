@@ -23,6 +23,12 @@ import { useDebounce } from '@/hooks/use-debounce';
 
 const PAGE_SIZE = 5;
 
+function maskAccountNumber(accountNumber: string): string {
+  const lastFourDigits = accountNumber.slice(-4);
+  const maskedLength = accountNumber.length - 4;
+  return `${'*'.repeat(maskedLength)}${lastFourDigits}`;
+}
+
 export default function BankAccountsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,6 +93,7 @@ export default function BankAccountsPage() {
     {
       header: 'Account Number',
       accessorKey: 'accountNumber' as keyof BankAccount,
+      cell: (row: BankAccount) => maskAccountNumber(row.accountNumber),
     },
     {
       header: 'Bank',
