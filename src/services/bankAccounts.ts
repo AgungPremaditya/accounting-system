@@ -1,21 +1,23 @@
-import { createBrowserSupabase } from '@/lib/supabase/client';
+import { createServerSupabase } from '@/lib/supabase/server';
 
 export interface BankAccount {
   id: string;
-  account_name: string;
-  account_number: string;
-  bank_name: string;
-  account_type: 'checking' | 'savings' | 'investment';
-  initial_balance: number;
-  current_balance: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  account_code: string;
+  name: string;
+  accountNumber: string;
+  bank: string;
+  type: 'checking' | 'savings' | 'investment';
+  balance: number;
+  status: 'Active' | 'Inactive';
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface CreateBankAccountDTO {
+export interface PaginatedResponse<T> {
+  data: T[];
+  count: number;
+}
+
+export interface CreateBankAccountInput {
   name: string;
   accountNumber: string;
   bank: string;
@@ -23,14 +25,33 @@ export interface CreateBankAccountDTO {
   balance: number;
 }
 
-export async function createBankAccount(data: CreateBankAccountDTO): Promise<BankAccount> {
-  const supabase = createBrowserSupabase();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
-  if (userError || !user) {
-    throw new Error('You must be logged in to create a bank account');
+interface GetBankAccountsParams {
+  page: number;
+  pageSize: number;
+  search?: string;
+}
+
+export async function getBankAccounts({ page, pageSize, search }: GetBankAccountsParams): Promise<PaginatedResponse<BankAccount>> {
+  const searchParams = new URLSearchParams({
+    page: page.toString(),
+    pageSize: pageSize.toString(),
+  });
+
+  if (search) {
+    searchParams.append('search', search);
   }
 
+  const response = await fetch(`/api/banking/accounts?${searchParams.toString()}`);
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to fetch bank accounts');
+  }
+
+  return data;
+}
+
+export async function createBankAccount(data: CreateBankAccountInput): Promise<BankAccount> {
   const response = await fetch('/api/banking/accounts', {
     method: 'POST',
     headers: {
@@ -39,28 +60,11 @@ export async function createBankAccount(data: CreateBankAccountDTO): Promise<Ban
     body: JSON.stringify(data),
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to create bank account');
-  }
-
-  return response.json();
-}
-
-export async function getBankAccounts(): Promise<BankAccount[]> {
-  const supabase = createBrowserSupabase();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
-  if (userError || !user) {
-    throw new Error('You must be logged in to view bank accounts');
-  }
-
-  const response = await fetch('/api/banking/accounts');
+  const result = await response.json();
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Failed to fetch bank accounts');
+    throw new Error(result.error || 'Failed to create bank account');
   }
 
-  return response.json();
+  return result;
 } 

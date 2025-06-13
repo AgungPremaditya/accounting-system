@@ -51,33 +51,64 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '10');
+    const search = searchParams.get('search') || '';
+
     const supabase = await createServerSupabase();
-    
-    // Verify user authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
       return NextResponse.json(
-        { message: 'Unauthorized' },
+        { error: 'You must be logged in to view bank accounts' },
         { status: 401 }
       );
     }
 
-    const { data: accounts, error } = await supabase
-      .from('accounts')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    // Calculate range for pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
 
-    if (error) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
+    let query = supabase
+      .from('accounts')
+      .select('*', { count: 'exact' })
+      .eq('user_id', user.id);
+
+    // Add search filter if search term is provided
+    if (search) {
+      query = query.or(`account_name.ilike.%${search}%,bank_name.ilike.%${search}%,account_number.ilike.%${search}%`);
     }
 
-    return NextResponse.json(accounts);
+    // Get paginated data with search filter and count
+    const { data: accounts, error, count } = await query
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      data: accounts.map(account => ({
+        id: account.id,
+        name: account.account_name,
+        accountNumber: account.account_number,
+        bank: account.bank_name,
+        type: account.account_type,
+        balance: account.current_balance,
+        status: account.is_active ? 'Active' : 'Inactive',
+        createdAt: account.created_at,
+        updatedAt: account.updated_at,
+      })),
+      count: count || 0,
+    });
   } catch (error) {
-    console.error('Error fetching bank accounts:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     );
   }

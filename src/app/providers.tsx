@@ -1,14 +1,13 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode } from 'react';
-import { Toaster } from 'sonner';
-import { trpc } from '@/utils/trpc';
 import { httpBatchLink } from '@trpc/client';
 import { useState } from 'react';
+import { trpc } from '@/utils/trpc';
+import { Toaster } from 'sonner';
 import superjson from 'superjson';
 
-export function Providers({ children }: { children: ReactNode }) {
+export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
@@ -17,7 +16,7 @@ export function Providers({ children }: { children: ReactNode }) {
       },
     },
   }));
-  
+
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [

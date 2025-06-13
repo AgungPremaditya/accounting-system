@@ -8,7 +8,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,44 +24,30 @@ import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { trpc } from "@/utils/trpc"
 import { type Account } from "@/types/database.types"
+import { useState } from 'react';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-const formFields = [
-  {
-    id: "name",
-    label: "Account Name",
-    type: "text",
-    placeholder: "Main Checking Account",
-  },
-  {
-    id: "accountNumber",
-    label: "Account Number",
-    type: "text",
-    placeholder: "XXXX-XXXX-XXXX-XXXX",
-  },
-  {
-    id: "bank",
-    label: "Bank Name",
-    type: "text",
-    placeholder: "Chase Bank",
-  },
-  {
-    id: "type",
-    label: "Account Type",
-    type: "select",
-    placeholder: "Select account type",
-    options: [
-      { value: "checking", label: "Checking" },
-      { value: "savings", label: "Savings" },
-      { value: "investment", label: "Investment" },
-    ],
-  },
-  {
-    id: "balance",
-    label: "Initial Balance",
-    type: "number",
-    placeholder: "0.00",
-  },
-]
+const formSchema = z.object({
+  name: z.string().min(1, 'Account name is required'),
+  accountNumber: z.string().min(1, 'Account number is required'),
+  bank: z.string().min(1, 'Bank name is required'),
+  type: z.enum(['checking', 'savings', 'investment'], {
+    required_error: 'Account type is required',
+  }),
+  balance: z.number().min(0, 'Balance must be positive'),
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -88,124 +73,149 @@ const itemVariants = {
   },
 }
 
-export function CreateAccountModal() {
-  const [open, setOpen] = React.useState(false)
-  const [formData, setFormData] = React.useState({
-    name: "",
-    accountNumber: "",
-    bank: "",
-    type: "",
-    balance: "",
-  })
+interface CreateAccountModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: FormData) => Promise<void>;
+}
 
-  const utils = trpc.useContext()
+export function CreateAccountModal({ open, onOpenChange, onSubmit }: CreateAccountModalProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { mutate: createAccount, isPending } = trpc.bankAccount.create.useMutation<Account>({
-    onSuccess: () => {
-      utils.bankAccount.list.invalidate()
-      toast.success("Bank account created successfully")
-      setOpen(false)
-      setFormData({
-        name: "",
-        accountNumber: "",
-        bank: "",
-        type: "",
-        balance: "",
-      })
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      accountNumber: '',
+      bank: '',
+      type: 'checking',
+      balance: 0,
     },
-    onError: (error) => {
-      toast.error(error.message)
-    },
-  })
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    createAccount({
-      ...formData,
-      balance: parseFloat(formData.balance) || 0,
-      type: formData.type as "checking" | "savings" | "investment",
-    })
-  }
+  const handleSubmit = async (data: FormData) => {
+    setIsSubmitting(true);
+    try {
+      await onSubmit(data);
+      form.reset();
+    } catch (error) {
+      console.error('Failed to create account:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Account
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <AnimatePresence>
         {open && (
           <DialogContent>
-            <form onSubmit={handleSubmit}>
-              <DialogHeader>
-                <DialogTitle>Create Bank Account</DialogTitle>
-                <DialogDescription>
-                  Add a new bank account to your ledger system.
-                </DialogDescription>
-              </DialogHeader>
-              <motion.div
-                className="grid gap-4 py-4"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-              >
-                {formFields.map((field) => (
-                  <motion.div
-                    key={field.id}
-                    className="grid gap-2"
-                    variants={itemVariants}
-                  >
-                    <Label htmlFor={field.id}>{field.label}</Label>
-                    {field.type === "select" ? (
-                      <Select
-                        value={formData[field.id as keyof typeof formData]}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, [field.id]: value })
-                        }
-                        required
-                      >
-                        <SelectTrigger id={field.id}>
-                          <SelectValue placeholder={field.placeholder} />
-                        </SelectTrigger>
+            <DialogHeader>
+              <DialogTitle>Create Bank Account</DialogTitle>
+              <DialogDescription>
+                Add a new bank account to your ledger system.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Main Checking Account" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="accountNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="XXXX-XXXX-XXXX-XXXX" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="bank"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bank Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Bank of America" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select account type" />
+                          </SelectTrigger>
+                        </FormControl>
                         <SelectContent>
-                          {field.options?.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="checking">Checking</SelectItem>
+                          <SelectItem value="savings">Savings</SelectItem>
+                          <SelectItem value="investment">Investment</SelectItem>
                         </SelectContent>
                       </Select>
-                    ) : (
-                      <Input
-                        id={field.id}
-                        type={field.type}
-                        placeholder={field.placeholder}
-                        value={formData[field.id as keyof typeof formData]}
-                        onChange={(e) =>
-                          setFormData({ ...formData, [field.id]: e.target.value })
-                        }
-                        required
-                      />
-                    )}
-                  </motion.div>
-                ))}
-              </motion.div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                  disabled={isPending}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isPending}>
-                  {isPending ? "Creating..." : "Create Account"}
-                </Button>
-              </DialogFooter>
-            </form>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="balance"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Initial Balance</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="0.00"
+                          {...field}
+                          value={field.value || ''}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                            field.onChange(value);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Creating...' : 'Create Account'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
           </DialogContent>
         )}
       </AnimatePresence>

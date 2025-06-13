@@ -3,6 +3,9 @@ import { ZodError } from 'zod';
 import superjson from 'superjson';
 import { type NextRequest } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
+import type { BankAccount, PaginatedResponse } from './routers/bankAccount';
+import type { inferRouterOutputs, inferRouterInputs } from '@trpc/server';
+import type { AppRouter } from './routers/_app';
 
 /**
  * 1. CONTEXT
@@ -24,6 +27,7 @@ export const createTRPCContext = async (opts: CreateContextOptions) => {
 export type Context = {
   user: {
     id: string;
+    email: string;
   } | null;
 };
 
@@ -55,23 +59,26 @@ const t = initTRPC.context<Context>().create({
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+export const protectedProcedure = t.procedure.use(async (opts) => {
   const supabase = await createServerSupabase();
   const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error || !user) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
-      message: 'You must be logged in',
+      message: 'You must be logged in to access this resource',
     });
   }
 
-  return next({
+  return opts.next({
     ctx: {
-      ...ctx,
       user: {
         id: user.id,
+        email: user.email || '',
       },
     },
   });
-}); 
+});
+
+export type RouterOutput = inferRouterOutputs<AppRouter>;
+export type RouterInput = inferRouterInputs<AppRouter>; 
