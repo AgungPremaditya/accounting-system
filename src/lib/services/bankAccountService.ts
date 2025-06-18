@@ -25,10 +25,19 @@ interface CreateBankAccountParams {
 }
 
 export class BankAccountService {
+  /**
+   * Generates a random account code
+   * @returns The generated account code
+   */
   private static generateAccountCode(): string {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   }
 
+  /**
+   * Maps an account from the database to a DTO
+   * @param account - The account from the database
+   * @returns The account in DTO format
+   */
   private static mapAccountToDTO(account: Account): BankAccount {
     return {
       id: account.id,
@@ -43,6 +52,11 @@ export class BankAccountService {
     };
   }
 
+  /**
+   * Creates a new bank account
+   * @param params - The parameters for creating the account
+   * @returns The created account
+   */
   static async createAccount(params: CreateBankAccountParams): Promise<BankAccount> {
     const supabase = await createServerSupabase();
     
@@ -74,6 +88,14 @@ export class BankAccountService {
     return this.mapAccountToDTO(account);
   }
 
+  /**
+   * Gets all accounts for a user
+   * @param userId - The ID of the user
+   * @param page - The page number
+   * @param pageSize - The number of accounts per page
+   * @param search - The search term
+   * @returns The accounts
+   */
   static async getAccounts(userId: string, page: number, pageSize: number, search?: string) {
     const supabase = await createServerSupabase();
     
@@ -109,6 +131,12 @@ export class BankAccountService {
     };
   }
 
+  /**
+   * Searches for an account by number
+   * @param accountNumber - The account number
+   * @param userId - The ID of the user
+   * @returns The account
+   */
   static async searchByNumber(accountNumber: string, userId: string): Promise<BankAccount> {
     const supabase = await createServerSupabase();
     
