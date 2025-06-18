@@ -1,5 +1,6 @@
 import { createServerSupabase } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { BankAccountService } from '@/lib/services/bankAccountService';
 
 export async function POST(request: Request) {
   try {
@@ -17,33 +18,20 @@ export async function POST(request: Request) {
 
     const { name, accountNumber, bank, type, balance } = await request.json();
 
-    const { data: account, error } = await supabase
-      .from('accounts')
-      .insert([
-        {
-          account_name: name,
-          account_number: accountNumber,
-          bank_name: bank,
-          account_type: type,
-          initial_balance: balance,
-          current_balance: balance,
-          is_active: true,
-          user_id: user.id,
-          account_code: Math.random().toString(36).substring(2, 8).toUpperCase(),
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ message: error.message }, { status: 400 });
-    }
+    const account = await BankAccountService.createAccount({
+      name,
+      accountNumber,
+      bank,
+      type,
+      balance,
+      userId: user.id,
+    });
 
     return NextResponse.json(account);
   } catch (error) {
     console.error('Error creating bank account:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { message: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     );
   }
@@ -66,46 +54,9 @@ export async function GET(request: Request) {
       );
     }
 
-    // Calculate range for pagination
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
+    const result = await BankAccountService.getAccounts(user.id, page, pageSize, search);
 
-    let query = supabase
-      .from('accounts')
-      .select('*', { count: 'exact' })
-      .eq('user_id', user.id);
-
-    // Add search filter if search term is provided
-    if (search) {
-      query = query.or(`account_name.ilike.%${search}%,bank_name.ilike.%${search}%,account_number.ilike.%${search}%`);
-    }
-
-    // Get paginated data with search filter and count
-    const { data: accounts, error, count } = await query
-      .order('created_at', { ascending: false })
-      .range(from, to);
-
-    if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json({
-      data: accounts.map(account => ({
-        id: account.id,
-        name: account.account_name,
-        accountNumber: account.account_number,
-        bank: account.bank_name,
-        type: account.account_type,
-        balance: account.current_balance,
-        status: account.is_active ? 'Active' : 'Inactive',
-        createdAt: account.created_at,
-        updatedAt: account.updated_at,
-      })),
-      count: count || 0,
-    });
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
