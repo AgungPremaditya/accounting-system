@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
+import { BankAccountService } from '@/lib/services/bankAccountService';
 
 const createTransactionSchema = z.object({
-  account_id: z.string().min(1, 'Account ID is required'),
+  sender_account_id: z.string().min(1, 'Sender Account ID is required'),
+  receiver_account_id: z.string().min(1, 'Receiver Account ID is required'),
   transaction_date: z.date({
     required_error: "Please select a date",
   }),
@@ -21,6 +23,18 @@ export interface Transaction extends CreateTransactionInput {
 }
 
 export const transactionRouter = router({
+  getUserAccounts: protectedProcedure
+    .query(async ({ ctx }) => {
+      if (!ctx.user) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to view accounts',
+        });
+      }
+
+      return BankAccountService.getAccounts(ctx.user.id, 1, 100);
+    }),
+
   create: protectedProcedure
     .input(createTransactionSchema)
     .mutation(async ({ ctx, input }) => {

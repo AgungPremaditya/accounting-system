@@ -19,6 +19,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { useState } from 'react';
 import {
@@ -36,8 +43,8 @@ import { trpc } from '@/utils/trpc';
 import type { BankAccount } from '@/server/routers/bankAccount';
 import type { Transaction, CreateTransactionInput } from '@/server/routers/transaction';
 
-// Step 1: Account Search
-const SearchStep = ({
+// Step 1: Search Receiver Account
+const SearchReceiverStep = ({
   onNext,
   isSubmitting,
 }: {
@@ -68,9 +75,9 @@ const SearchStep = ({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Search Account</DialogTitle>
+        <DialogTitle>Search Receiver Account</DialogTitle>
         <DialogDescription>
-          Enter the account number to create an expense transaction.
+          Enter the receiver's account number to create a transaction.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
@@ -80,7 +87,7 @@ const SearchStep = ({
             name="account_number"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Account Number</FormLabel>
+                <FormLabel>Receiver Account Number</FormLabel>
                 <div className="flex gap-2">
                   <FormControl>
                     <Input placeholder="Enter account number" {...field} />
@@ -105,15 +112,18 @@ const SearchStep = ({
 
 // Step 2: Transaction Details
 const CreateStep = ({
-  account,
+  receiverAccount,
   onBack,
   onNext,
 }: {
-  account: BankAccount;
+  receiverAccount: BankAccount;
   onBack: () => void;
   onNext: (data: Transaction) => void;
 }) => {
+  const { data: userAccounts, isLoading: isLoadingAccounts } = trpc.transaction.getUserAccounts.useQuery();
+
   const createSchema = z.object({
+    sender_account_id: z.string().min(1, 'Sender account is required'),
     transaction_date: z.date({
       required_error: "Please select a date",
     }),
@@ -141,7 +151,7 @@ const CreateStep = ({
   const onSubmit = (data: z.infer<typeof createSchema>) => {
     const input: CreateTransactionInput = {
       ...data,
-      account_id: account.id,
+      receiver_account_id: receiverAccount.id,
       total_amount: -Math.abs(data.total_amount),
     };
     createTransaction(input);
@@ -152,11 +162,39 @@ const CreateStep = ({
       <DialogHeader>
         <DialogTitle>Create Transaction</DialogTitle>
         <DialogDescription>
-          Create an expense transaction for account {account.name}.
+          Create a transaction to {receiverAccount.name}.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="sender_account_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>From Account</FormLabel>
+                <Select
+                  disabled={isLoadingAccounts}
+                  onValueChange={field.onChange}
+                  value={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select sender account" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {userAccounts?.data.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.name} - {account.accountNumber}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="transaction_date"
@@ -260,7 +298,7 @@ const CreateStep = ({
             >
               Back
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || isLoadingAccounts}>
               {isSubmitting ? 'Creating...' : 'Create Transaction'}
             </Button>
           </DialogFooter>
@@ -284,7 +322,7 @@ const SuccessStep = ({
     <DialogHeader>
       <DialogTitle>Transaction Created</DialogTitle>
       <DialogDescription>
-        The expense transaction has been successfully created.
+        The transaction has been successfully created.
       </DialogDescription>
     </DialogHeader>
     <div className="flex flex-col items-center justify-center py-6">
@@ -321,11 +359,11 @@ export function CreateTransactionModal({
   onOpenChange, 
 }: CreateTransactionModalProps) {
   const [currentStep, setCurrentStep] = useState<Step>('search');
-  const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
+  const [selectedReceiverAccount, setSelectedReceiverAccount] = useState<BankAccount | null>(null);
   const [transactionData, setTransactionData] = useState<Transaction | null>(null);
 
   const handleSearchComplete = (account: BankAccount) => {
-    setSelectedAccount(account);
+    setSelectedReceiverAccount(account);
     setCurrentStep('create');
   };
 
@@ -336,7 +374,7 @@ export function CreateTransactionModal({
 
   const handleCreateAnother = () => {
     setCurrentStep('search');
-    setSelectedAccount(null);
+    setSelectedReceiverAccount(null);
     setTransactionData(null);
   };
 
@@ -345,7 +383,7 @@ export function CreateTransactionModal({
     // Reset everything after animation
     setTimeout(() => {
       setCurrentStep('search');
-      setSelectedAccount(null);
+      setSelectedReceiverAccount(null);
       setTransactionData(null);
     }, 200);
   };
@@ -361,16 +399,16 @@ export function CreateTransactionModal({
     switch (currentStep) {
       case 'search':
         return (
-          <SearchStep
+          <SearchReceiverStep
             onNext={handleSearchComplete}
             isSubmitting={false}
           />
         );
       case 'create':
-        if (!selectedAccount) return null;
+        if (!selectedReceiverAccount) return null;
         return (
           <CreateStep
-            account={selectedAccount}
+            receiverAccount={selectedReceiverAccount}
             onBack={() => setCurrentStep('search')}
             onNext={handleCreateComplete}
           />
