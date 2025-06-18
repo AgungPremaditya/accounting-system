@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { CreateTransactionModal } from "@/components/banking/create-transaction-modal";
+import { TransactionDetailsModal } from "@/components/banking/transaction-details-modal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,7 @@ const PAGE_SIZE = 10;
 
 export default function TransactionsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMounted, setIsMounted] = useState(false);
@@ -98,7 +100,7 @@ export default function TransactionsPage() {
         header: '',
         accessorKey: 'id',
         className: 'w-[50px]',
-        cell: () => (
+        cell: (row) => (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -108,7 +110,9 @@ export default function TransactionsPage() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>View Details</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSelectedTransactionId(row.id)}>
+                View Details
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ),
@@ -190,11 +194,18 @@ export default function TransactionsPage() {
         </Card>
       </div>
       {isMounted && (
-        <CreateTransactionModal
-          open={isCreateModalOpen}
-          onOpenChange={setIsCreateModalOpen}
-          onSuccess={handleCreateSuccess}
-        />
+        <>
+          <CreateTransactionModal
+            open={isCreateModalOpen}
+            onOpenChange={setIsCreateModalOpen}
+            onSuccess={handleCreateSuccess}
+          />
+          <TransactionDetailsModal
+            open={!!selectedTransactionId}
+            onOpenChange={(open) => !open && setSelectedTransactionId(null)}
+            transactionId={selectedTransactionId || ""}
+          />
+        </>
       )}
     </DashboardLayout>
   );

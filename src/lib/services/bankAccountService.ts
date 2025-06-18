@@ -38,7 +38,7 @@ export class BankAccountService {
    * @param account - The account from the database
    * @returns The account in DTO format
    */
-  private static mapAccountToDTO(account: Account): BankAccount {
+  static mapAccountToDTO(account: Account): BankAccount {
     return {
       id: account.id,
       name: account.account_name,

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import { BankAccountService } from '@/lib/services/bankAccountService';
+import { createServerSupabase } from '@/lib/supabase/server';
 
 export interface BankAccount {
   id: string;
@@ -83,5 +84,36 @@ export const bankAccountRouter = router({
       }
 
       return BankAccountService.searchByNumber(input.accountNumber, ctx.user.id);
+    }),
+
+  getById: protectedProcedure
+    .input(z.object({
+      id: z.string().min(1, 'Account ID is required'),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.user) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to view bank account details',
+        });
+      }
+
+      const supabase = await createServerSupabase();
+      
+      const { data: account, error } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('id', input.id)
+        .eq('user_id', ctx.user.id)
+        .single();
+
+      if (error || !account) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Account not found',
+        });
+      }
+
+      return BankAccountService.mapAccountToDTO(account);
     }),
 }); 

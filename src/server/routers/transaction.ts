@@ -85,4 +85,12 @@ export const transactionRouter = router({
         }],
       });
     }),
+
+  getById: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+    }))
+    .query(async ({ input, ctx }) => {
+      return TransactionService.getTransactionById(input.id, ctx.user.id);
+    }),
 }); 
