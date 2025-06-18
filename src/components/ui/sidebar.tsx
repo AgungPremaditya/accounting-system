@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { MenuIcon } from "lucide-react"
+import { PanelLeft } from "lucide-react"
 
 const SidebarContext = React.createContext<{
   collapsed: boolean
@@ -58,7 +58,7 @@ export function SidebarTrigger() {
       onClick={() => setCollapsed(!collapsed)}
       className="h-9 w-9"
     >
-      <MenuIcon className="h-4 w-4" />
+      <PanelLeft className="h-4 w-4" />
     </Button>
   )
 }
