@@ -1,7 +1,19 @@
 import { createServerSupabase } from '@/lib/supabase/server';
 import { TRPCError } from '@trpc/server';
-import type { Account } from '@/types/database.types';
-import type { BankAccount } from '@/services/bankAccounts';
+import type { Database } from '@/types/database.types';
+
+type Account = Database['public']['Tables']['accounts']['Row'];
+type BankAccount = {
+  id: string;
+  name: string;
+  accountNumber: string;
+  bank: string;
+  type: 'checking' | 'savings' | 'investment';
+  balance: number;
+  status: 'Active' | 'Inactive';
+  createdAt: string;
+  updatedAt: string;
+};
 
 interface CreateBankAccountParams {
   name: string;
@@ -23,7 +35,7 @@ export class BankAccountService {
       name: account.account_name,
       accountNumber: account.account_number,
       bank: account.bank_name,
-      type: account.account_type,
+      type: account.account_type as 'checking' | 'savings' | 'investment',
       balance: account.current_balance,
       status: account.is_active ? 'Active' : 'Inactive',
       createdAt: account.created_at,
@@ -95,5 +107,26 @@ export class BankAccountService {
       data: accounts.map(this.mapAccountToDTO),
       count: count || 0,
     };
+  }
+
+  static async searchByNumber(accountNumber: string, userId: string): Promise<BankAccount> {
+    const supabase = await createServerSupabase();
+    
+    const { data: account, error } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('account_number', accountNumber)
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !account) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Account not found',
+      });
+    }
+
+    return this.mapAccountToDTO(account);
   }
 } 

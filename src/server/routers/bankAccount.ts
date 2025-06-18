@@ -35,6 +35,10 @@ const paginationSchema = z.object({
   pageSize: z.number().min(1).max(100),
 });
 
+const searchAccountSchema = z.object({
+  accountNumber: z.string().min(1, 'Account number is required'),
+});
+
 export type CreateBankAccountInput = z.infer<typeof createBankAccountSchema>;
 
 export const bankAccountRouter = router({
@@ -65,5 +69,18 @@ export const bankAccountRouter = router({
       }
 
       return BankAccountService.getAccounts(ctx.user.id, input.page, input.pageSize);
+    }),
+
+  searchByNumber: protectedProcedure
+    .input(searchAccountSchema)
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to search bank accounts',
+        });
+      }
+
+      return BankAccountService.searchByNumber(input.accountNumber, ctx.user.id);
     }),
 }); 

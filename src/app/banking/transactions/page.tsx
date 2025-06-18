@@ -133,13 +133,16 @@ export default function TransactionsPage() {
     mutationFn: async (data: CreateTransactionFormData) => {
       // TODO: Replace with actual API call
       console.log('Creating transaction:', data);
+      const isCredit = data.total_amount > 0;
+      const absoluteAmount = Math.abs(data.total_amount);
+      
       const newTransaction: Transaction = {
         id: `${Date.now()}`,
         transaction_number: data.transaction_number,
-        transaction_date: data.transaction_date,
+        transaction_date: data.transaction_date.toISOString().split('T')[0],
         description: data.description,
         reference: data.reference,
-        total_amount: data.total_amount,
+        total_amount: absoluteAmount,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         entries: [
@@ -147,8 +150,8 @@ export default function TransactionsPage() {
             id: `entry-${Date.now()}-1`,
             transaction_id: `${Date.now()}`,
             account_id: data.account_id,
-            debit_amount: data.transaction_type === 'Debit' ? data.total_amount : 0,
-            credit_amount: data.transaction_type === 'Credit' ? data.total_amount : 0,
+            debit_amount: isCredit ? 0 : absoluteAmount,
+            credit_amount: isCredit ? absoluteAmount : 0,
             description: data.description,
             entry_order: 1,
             created_at: new Date().toISOString(),
@@ -157,8 +160,8 @@ export default function TransactionsPage() {
             id: `entry-${Date.now()}-2`,
             transaction_id: `${Date.now()}`,
             account_id: 'auto-generated', // This will be handled by the backend
-            debit_amount: data.transaction_type === 'Credit' ? data.total_amount : 0,
-            credit_amount: data.transaction_type === 'Debit' ? data.total_amount : 0,
+            debit_amount: isCredit ? absoluteAmount : 0,
+            credit_amount: isCredit ? 0 : absoluteAmount,
             description: `Auto-generated offsetting entry for ${data.description}`,
             entry_order: 2,
             created_at: new Date().toISOString(),
