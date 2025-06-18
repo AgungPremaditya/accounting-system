@@ -5,7 +5,7 @@ import type { Database } from '@/types/database.types';
 type DBTransaction = Database['public']['Tables']['transactions']['Row'];
 type DBTransactionEntry = Database['public']['Tables']['transaction_entries']['Row'];
 
-type Transaction = {
+export type Transaction = {
   id: string;
   transactionNumber: string;
   date: string;
@@ -106,6 +106,8 @@ export class TransactionService {
   private static validateTransactionEntries(entries: CreateTransactionParams['entries']): void {
     let totalDebits = 0;
     let totalCredits = 0;
+
+    console.log('entries', entries);
 
     // Validate each entry and calculate totals
     entries.forEach((entry, index) => {

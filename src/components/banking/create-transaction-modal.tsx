@@ -41,7 +41,8 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { trpc } from '@/utils/trpc';
 import type { BankAccount } from '@/server/routers/bankAccount';
-import type { Transaction, CreateTransactionInput } from '@/server/routers/transaction';
+import type { CreateTransactionInput } from '@/server/routers/transaction';
+import type { Transaction } from '@/lib/services/transactionService';
 
 // Step 1: Search Receiver Account
 const SearchReceiverStep = ({
@@ -152,7 +153,7 @@ const CreateStep = ({
     const input: CreateTransactionInput = {
       ...data,
       receiver_account_id: receiverAccount.id,
-      total_amount: -Math.abs(data.total_amount),
+      total_amount: data.total_amount,
     };
     createTransaction(input);
   };
@@ -417,7 +418,7 @@ export function CreateTransactionModal({
         if (!transactionData) return null;
         return (
           <SuccessStep
-            amount={transactionData.total_amount}
+            amount={transactionData.totalAmount}
             onClose={handleClose}
             onCreateAnother={handleCreateAnother}
           />
