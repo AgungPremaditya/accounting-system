@@ -36,6 +36,28 @@ export const transactionRouter = router({
       return BankAccountService.getAccounts(ctx.user.id, 1, 100);
     }),
 
+  list: protectedProcedure
+    .input(z.object({
+      page: z.number().min(1),
+      pageSize: z.number().min(1).max(100),
+      search: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (!ctx.user) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to view transactions',
+        });
+      }
+
+      return TransactionService.getTransactions(
+        ctx.user.id,
+        input.page,
+        input.pageSize,
+        input.search
+      );
+    }),
+
   create: protectedProcedure
     .input(createTransactionSchema)
     .mutation(async ({ ctx, input }) => {
@@ -62,6 +84,5 @@ export const transactionRouter = router({
           creditAmount: input.total_amount,
         }],
       });
-
     }),
 }); 

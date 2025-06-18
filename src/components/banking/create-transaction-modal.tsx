@@ -353,11 +353,13 @@ type Step = 'search' | 'create' | 'success';
 export interface CreateTransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
 export function CreateTransactionModal({ 
   open, 
-  onOpenChange, 
+  onOpenChange,
+  onSuccess,
 }: CreateTransactionModalProps) {
   const [currentStep, setCurrentStep] = useState<Step>('search');
   const [selectedReceiverAccount, setSelectedReceiverAccount] = useState<BankAccount | null>(null);
@@ -371,6 +373,7 @@ export function CreateTransactionModal({
   const handleCreateComplete = (data: Transaction) => {
     setTransactionData(data);
     setCurrentStep('success');
+    onSuccess?.();
   };
 
   const handleCreateAnother = () => {

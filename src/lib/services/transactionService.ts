@@ -107,8 +107,6 @@ export class TransactionService {
     let totalDebits = 0;
     let totalCredits = 0;
 
-    console.log('entries', entries);
-
     // Validate each entry and calculate totals
     entries.forEach((entry, index) => {
       // Check if entry has both debit and credit
