@@ -16,10 +16,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getBankAccounts, createBankAccount, type CreateBankAccountInput, type BankAccount, type PaginatedResponse } from '@/services/bankAccounts';
-import { DataTable } from '@/components/ui/data-table';
 import { useDebounce } from '@/hooks/use-debounce';
+import { trpc } from '@/utils/trpc';
+import type { BankAccount } from '@/server/routers/bankAccount';
+import type { CreateBankAccountInput } from '@/server/routers/bankAccount';
+import { DataTable } from '@/components/ui/data-table';
 
 const PAGE_SIZE = 5;
 
@@ -36,7 +37,7 @@ export default function BankAccountsPage() {
   const [isMounted, setIsMounted] = useState(false);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
-  const queryClient = useQueryClient();
+  const utils = trpc.useUtils();
 
   useEffect(() => {
     setIsMounted(true);
@@ -51,33 +52,32 @@ export default function BankAccountsPage() {
     data: accountsData,
     isLoading,
     error,
-  } = useQuery<PaginatedResponse<BankAccount>>({
-    queryKey: ['bankAccounts', { page: currentPage, pageSize: PAGE_SIZE, search: debouncedSearch }],
-    queryFn: () => getBankAccounts({ 
+  } = trpc.bankAccount.list.useQuery(
+    { 
       page: currentPage, 
       pageSize: PAGE_SIZE,
       search: debouncedSearch 
-    }),
-    staleTime: 5000,
-    refetchOnWindowFocus: false,
-    enabled: isMounted,
-  });
+    },
+    {
+      enabled: isMounted,
+      staleTime: 5000,
+    }
+  );
 
-  const { mutate: createAccount, isPending: isCreating } = useMutation({
-    mutationFn: createBankAccount,
+  const { mutate: createAccount, isPending: isCreating } = trpc.bankAccount.create.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bankAccounts'] });
+      utils.bankAccount.list.invalidate();
       setIsCreateModalOpen(false);
       toast.success('Bank account created successfully');
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : 'Failed to create bank account');
+      toast.error(error.message || 'Failed to create bank account');
     },
   });
 
   const handleCreateAccount = async (data: CreateBankAccountInput) => {
     try {
-      await createAccount(data);
+      createAccount(data);
     } catch (error) {
       // Error is handled by the mutation's onError
       console.error('Failed to create account:', error);

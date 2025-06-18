@@ -30,9 +30,10 @@ const createBankAccountSchema = z.object({
   balance: z.number().min(0, 'Balance must be positive'),
 });
 
-const paginationSchema = z.object({
+const listAccountsSchema = z.object({
   page: z.number().min(1),
   pageSize: z.number().min(1).max(100),
+  search: z.string().optional(),
 });
 
 const searchAccountSchema = z.object({
@@ -59,7 +60,7 @@ export const bankAccountRouter = router({
     }),
 
   list: protectedProcedure
-    .input(paginationSchema)
+    .input(listAccountsSchema)
     .query(async ({ ctx, input }) => {
       if (!ctx.user) {
         throw new TRPCError({
@@ -68,7 +69,7 @@ export const bankAccountRouter = router({
         });
       }
 
-      return BankAccountService.getAccounts(ctx.user.id, input.page, input.pageSize);
+      return BankAccountService.getAccounts(ctx.user.id, input.page, input.pageSize, input.search);
     }),
 
   searchByNumber: protectedProcedure
