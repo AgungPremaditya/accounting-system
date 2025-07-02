@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
             secure: process.env.NODE_ENV === 'production',
           });
         },
-        remove(name: string, options: CookieOptions) {
+        remove(name: string) {
           // Remove cookie from request
           request.cookies.delete(name);
           
@@ -56,7 +56,7 @@ export async function middleware(request: NextRequest) {
 
   // Refresh session if expired - required for Server Components
   // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   // If no session and trying to access protected route, redirect to login
   if (!user && !request.nextUrl.pathname.startsWith('/auth')) {

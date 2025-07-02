@@ -16,7 +16,7 @@ export default function LoginForm() {
         setError(result.error);
       }
     } catch (error) {
-      setError('An unexpected error occurred');
+      setError(`An unexpected error occurred: ${error}`);
     } finally {
       setLoading(false);
     }

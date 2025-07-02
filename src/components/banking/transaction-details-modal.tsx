@@ -9,9 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
 import { trpc } from '@/utils/trpc'
-import type { Transaction } from '@/lib/services/transactionService'
 
 function maskAccountNumber(accountNumber: string): string {
   if (!accountNumber) return "-"

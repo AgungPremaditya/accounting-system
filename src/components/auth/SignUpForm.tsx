@@ -20,7 +20,7 @@ export default function SignUpForm() {
         setMessage(result.message);
       }
     } catch (error) {
-      setError('An unexpected error occurred');
+      setError(`An unexpected error occurred: ${error}`);
     } finally {
       setLoading(false);
     }

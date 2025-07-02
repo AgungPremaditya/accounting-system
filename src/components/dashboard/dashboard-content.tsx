@@ -127,7 +127,7 @@ export function DashboardContent() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here's what's happening with your business today.</p>
+          <p className="text-muted-foreground">Welcome back! Here&apos;s what&apos;s happening with your business today.</p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline">January 2024</Badge>

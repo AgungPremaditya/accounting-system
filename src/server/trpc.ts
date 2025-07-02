@@ -3,7 +3,6 @@ import { ZodError } from 'zod';
 import superjson from 'superjson';
 import { type NextRequest } from 'next/server';
 import { createServerSupabase } from '@/lib/supabase/server';
-import type { BankAccount, PaginatedResponse } from './routers/bankAccount';
 import type { inferRouterOutputs, inferRouterInputs } from '@trpc/server';
 import type { AppRouter } from './routers/_app';
 

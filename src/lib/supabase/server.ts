@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr';
+import { CookieOptions, createServerClient } from '@supabase/ssr';
 import { type Database } from '@/types/database.types';
 import { cookies } from 'next/headers';
 
@@ -28,7 +28,7 @@ export async function createServerSupabase() {
           const cookieStore = await cookies();
           return cookieStore.get(name)?.value;
         },
-        async set(name: string, value: string, options: any) {
+        async set(name: string, value: string, options: CookieOptions) {
           const cookieStore = await cookies();
           cookieStore.set(name, value, {
             ...options,
@@ -36,7 +36,7 @@ export async function createServerSupabase() {
             secure: process.env.NODE_ENV === 'production',
           });
         },
-        async remove(name: string, options: any) {
+        async remove(name: string, options: CookieOptions) {
           const cookieStore = await cookies();
           cookieStore.set(name, '', { ...options, maxAge: 0 });
         },

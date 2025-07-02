@@ -12,13 +12,13 @@ export function useAuth() {
     const supabase = createBrowserSupabase();
 
     // Get initial user state
-    supabase.auth.getUser().then(({ data: { user }, error }) => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       setLoading(false);
     });
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async () => {
       // When auth state changes, verify the user with getUser
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);

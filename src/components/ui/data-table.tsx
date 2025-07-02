@@ -73,7 +73,7 @@ export function DataTable<T extends { id: string | number }>({
     const halfVisible = Math.floor(maxVisiblePages / 2);
     
     let startPage = Math.max(1, currentPage - halfVisible);
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
     
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);

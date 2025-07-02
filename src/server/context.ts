@@ -3,7 +3,7 @@ import type { inferAsyncReturnType } from '@trpc/server';
 
 export async function createContext() {
   const supabase = await createServerSupabase();
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   return {
     user: user ? {

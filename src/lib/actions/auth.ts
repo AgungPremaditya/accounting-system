@@ -1,6 +1,5 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import { createServerSupabase } from '../supabase/server';
 import { redirect } from 'next/navigation';
 
@@ -10,7 +9,7 @@ export async function signIn(formData: FormData) {
 
   const supabase = await createServerSupabase();
   
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -28,7 +27,7 @@ export async function signUp(formData: FormData) {
 
   const supabase = await createServerSupabase();
   
-  const { data, error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {

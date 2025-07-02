@@ -78,7 +78,7 @@ const SearchReceiverStep = ({
       <DialogHeader>
         <DialogTitle>Search Receiver Account</DialogTitle>
         <DialogDescription>
-          Enter the receiver's account number to create a transaction.
+          Enter the receiver&apos;s account number to create a transaction.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
