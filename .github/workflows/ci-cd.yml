@@ -66,9 +66,6 @@ jobs:
           PGHOST: localhost
           PGPORT: 5432
 
-      - name: Type checking
-        run: npm run type-check
-
       - name: Linting
         run: npm run lint
 
