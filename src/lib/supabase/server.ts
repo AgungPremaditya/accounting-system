@@ -1,6 +1,9 @@
 import { CookieOptions, createServerClient } from '@supabase/ssr';
 import { type Database } from '@/types/database.types';
 import { cookies } from 'next/headers';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL');
