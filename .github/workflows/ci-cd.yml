@@ -43,13 +43,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Setup test environment
+      - name: Setup environment variables
         run: |
-          cp .env.example .env.test
-          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >>  .env.test
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >>  .env.test
+          touch .env.test
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.test
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.test
           echo "TEST_USER_EMAIL=${{ secrets.TEST_USER_EMAIL }}" >> .env.test
-          echo "TEST_USER_EMAIL=${{ secrets.TEST_USER_PASSWORD }}" >> .env.test
+          echo "TEST_USER_PASSWORD=${{ secrets.TEST_USER_PASSWORD }}" >> .env.test
 
       - name: Setup database schema
         run: |
@@ -83,10 +83,10 @@ jobs:
         run: npm run test:e2e
         env:
           NODE_ENV: test
-          NEXT_PUBLIC_SUPABASE_URL: https://rgofgewycaeiafnejpon.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnb2ZnZXd5Y2FlaWFmbmVqcG9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNTgzMzIsImV4cCI6MjA2NjkzNDMzMn0.IyqSP3PbnXJMc1erMwnTyZ3w1VUa2gtkQExtGJAoeRU
-          TEST_USER_EMAIL: mandala@atas.ai
-          TEST_USER_PASSWORD: ukh3neg0vyw*HKN4tqp
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
 
       - name: Upload Playwright report
         if: always()
