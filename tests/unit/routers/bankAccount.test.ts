@@ -40,6 +40,13 @@ describe('Bank Account Router', () => {
     (createServerSupabase as jest.Mock).mockResolvedValue(mockSupabase);
   });
 
+  // New test suite to verify CI workflow
+  describe('CI workflow verification', () => {
+    it('should pass this simple test', () => {
+      expect(true).toBe(true);
+    });
+  });
+
   describe('createAccount', () => {
     const createInput = {
       name: 'Test Account',
