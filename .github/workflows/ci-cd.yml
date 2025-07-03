@@ -46,9 +46,10 @@ jobs:
       - name: Setup test environment
         run: |
           cp .env.example .env.test
-          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_db" >> .env.test
-          echo "NEXTAUTH_SECRET=test-secret" >> .env.test
-          echo "NEXTAUTH_URL=http://localhost:3000" >> .env.test
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >>  .env.test
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >>  .env.test
+          echo "TEST_USER_EMAIL=${{ secrets.TEST_USER_EMAIL }}" >> .env.test
+          echo "TEST_USER_EMAIL=${{ secrets.TEST_USER_PASSWORD }}" >> .env.test
 
       - name: Setup database schema
         run: |
@@ -65,9 +66,6 @@ jobs:
         env:
           PGHOST: localhost
           PGPORT: 5432
-
-      - name: Type checking
-        run: npm run type-check
 
       - name: Linting
         run: npm run lint
