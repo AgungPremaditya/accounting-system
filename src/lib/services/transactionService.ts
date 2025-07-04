@@ -177,10 +177,9 @@ export class TransactionService {
           created_by: params.createdBy,
         },
       ])
-      .select()
-      .single();
+      .select();
 
-    if (transactionError || !transaction) {
+    if (transactionError || !transaction?.[0]) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: transactionError?.message || 'Failed to create transaction',
@@ -189,7 +188,7 @@ export class TransactionService {
 
     // Create transaction entries
     const entries = params.entries.map((entry, index) => ({
-      transaction_id: transaction.id,
+      transaction_id: transaction[0].id,
       account_id: entry.accountId,
       debit_amount: entry.debitAmount || null,
       credit_amount: entry.creditAmount || null,
@@ -204,14 +203,14 @@ export class TransactionService {
 
     if (entriesError || !createdEntries) {
       // If entries creation fails, delete the transaction
-      await supabase.from('transactions').delete().eq('id', transaction.id);
+      await supabase.from('transactions').delete().eq('id', transaction[0].id);
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: entriesError?.message || 'Failed to create transaction entries',
       });
     }
 
-    return this.mapTransactionToDTO(transaction, createdEntries);
+    return this.mapTransactionToDTO(transaction[0], createdEntries);
   }
 
   /**

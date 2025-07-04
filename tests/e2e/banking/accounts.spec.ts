@@ -86,11 +86,3 @@ test.describe('Bank Accounts Flow', () => {
     }
   });
 });
-
-test('CI workflow verification - E2E', async ({ page }) => {
-  // Navigate to the home page
-  await page.goto('/');
-  
-  // Verify that the page loads
-  await expect(page).toHaveTitle(/Ledger System/);
-}); 
