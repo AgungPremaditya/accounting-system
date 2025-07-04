@@ -22,6 +22,17 @@ const config: JestConfigWithTsJest = {
     '!src/**/*.stories.{ts,tsx}',
     '!src/types/**/*',
   ],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    }
+  },
+  verbose: true
 };
 
 export default config; 
