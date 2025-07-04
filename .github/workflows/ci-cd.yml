@@ -12,8 +12,8 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     
-    # Run tests only for PRs
-    if: github.event_name == 'pull_request'
+    # Run tests for both PRs and pushes to main
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     
     services:
       postgres:
@@ -89,6 +89,15 @@ jobs:
           name: coverage-report
           path: coverage/
           retention-days: 30
+
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
 
   deploy:
     name: Deploy to Vercel
