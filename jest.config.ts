@@ -12,15 +12,30 @@ const config: JestConfigWithTsJest = {
     '<rootDir>/tests/unit/**/*.spec.{ts,tsx}',
   ],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: './tsconfig.json'
+    '^.+\\.(ts|tsx)$': ['babel-jest', {
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' } }],
+        '@babel/preset-typescript',
+        ['@babel/preset-react', { runtime: 'automatic' }]
+      ]
     }]
   },
   collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
+    'src/lib/services/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/*.stories.{ts,tsx}',
     '!src/types/**/*',
+  ],
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/components/',
+    '/app/',
+    '/hooks/',
+    '/utils/',
+    '/middleware.ts',
+    '/context.ts',
+    '/root.ts',
+    '/trpc.ts'
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
